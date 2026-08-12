@@ -12,6 +12,6 @@ services:
       - key: ENCORP_SQL_CONNECTION_STRING
         sync: false
       - key: ENCORP_ADMIN_USERNAME
-        sync: false
+        value: Encorp
       - key: ENCORP_ADMIN_PASSWORD
-        sync: false
+        value: encorp123

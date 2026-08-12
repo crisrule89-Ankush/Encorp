@@ -180,8 +180,8 @@ class EncorpRequestHandler(SimpleHTTPRequestHandler):
             users = load_protected_settings().get("auth_users", {})
             stored = users.get(username) if isinstance(users, dict) else None
             valid_file_login = isinstance(stored, dict) and verify_password(password, stored)
-            render_username = os.getenv("ENCORP_ADMIN_USERNAME", "").strip().lower()
-            render_password = os.getenv("ENCORP_ADMIN_PASSWORD", "")
+            render_username = os.getenv("ENCORP_ADMIN_USERNAME", "Encorp").strip().lower()
+            render_password = os.getenv("ENCORP_ADMIN_PASSWORD", "encorp123")
             valid_render_login = bool(
                 render_username
                 and render_password
