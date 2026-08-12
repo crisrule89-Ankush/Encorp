@@ -1,0 +1,13 @@
+.venv/
+build/
+dist/
+*.egg-info/
+__pycache__/
+*.pyc
+*.log
+settings.protected
+settings.protected.*
+.env
+.env.*
+tmp/
+output/

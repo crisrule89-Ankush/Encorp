@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Encorp | Search</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode">🌙</button>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+          <img id="headerLogo" class="small-logo" alt="company logo" />
+          <div class="brand-text">
+            <strong id="pageBrand">Encorp</strong>
+            <p>Payroll Hub</p>
+          </div>
+        </div>
+        <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle navigation">☰</button>
+        <nav class="sidebar-nav">
+          <a class="nav-link" href="dashboard.html">Dashboard</a>
+          <a class="nav-link" href="salary.html">Salary Structure</a>
+          <a class="nav-link" href="settings.html">Field Settings</a>
+          <a class="nav-link active" href="search.html">Search</a>
+          <a class="nav-link" href="index.html">Logout</a>
+        </nav>
+      </aside>
+
+      <main class="search-page">
+        <header class="page-header">
+          <div class="header-title">
+            <div>
+              <h1>Search Records</h1>
+              <p>Search salary records using PAN number.</p>
+            </div>
+          </div>
+          <div class="header-actions">
+            <div class="status-pill">Fast Lookup</div>
+          </div>
+        </header>
+
+        <section class="search-card">
+          <div class="search-row">
+            <input id="searchPan" type="text" placeholder="Enter PAN number" />
+            <button id="searchButton" type="button">Search</button>
+          </div>
+          <div id="searchResults" class="list-group"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

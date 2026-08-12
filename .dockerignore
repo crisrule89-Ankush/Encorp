@@ -1,0 +1,16 @@
+.git
+.github
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.log
+*.zip
+build
+dist
+output
+tests
+deployment
+settings.protected
+settings.protected.*
+tmp*

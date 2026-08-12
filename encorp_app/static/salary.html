@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Encorp | Salary Structure</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode">🌙</button>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+          <img id="headerLogo" class="small-logo" alt="company logo" />
+          <div class="brand-text">
+            <strong id="pageBrand">Encorp</strong>
+            <p>Payroll Hub</p>
+          </div>
+        </div>
+        <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle navigation">☰</button>
+        <nav class="sidebar-nav">
+          <a class="nav-link" href="dashboard.html">Dashboard</a>
+          <a class="nav-link active" href="salary.html">Salary Structure</a>
+          <a class="nav-link" href="settings.html">Field Settings</a>
+          <a class="nav-link" href="search.html">Search</a>
+          <a class="nav-link" href="index.html">Logout</a>
+        </nav>
+      </aside>
+
+      <main class="salary-page">
+        <header class="page-header">
+          <div class="header-title">
+            <div>
+              <h1>Salary Structure</h1>
+              <p>Employee compensation builder</p>
+            </div>
+          </div>
+        </header>
+
+        <section class="toolbar-card">
+          <div class="toolbar-group">
+            <button id="saveRecordBtn" type="button">Save</button>
+            <button id="updateRecordBtn" type="button">Update</button>
+            <button id="deleteRecordBtn" type="button">Delete</button>
+            <button id="searchRecordBtn" type="button">Search</button>
+            <button id="pdfBtn" type="button">Save as PDF</button>
+            <button id="csvBtn" type="button">Export CSV</button>
+            <button id="excelBtn" type="button">Export Excel</button>
+          </div>
+          <div class="status-pill" id="recordStatus">New record</div>
+        </section>
+
+        <section class="employee-card">
+          <h2>Employee Details</h2>
+          <div class="employee-grid">
+            <label>
+              Employee Name
+              <input id="employeeName" type="text" placeholder="Employee Name" />
+            </label>
+            <label>
+              Department
+              <input id="department" type="text" placeholder="Department" />
+            </label>
+            <label>
+              Designation
+              <input id="designation" type="text" placeholder="Designation" />
+            </label>
+            <label>
+              DOJ
+              <input id="doj" type="date" />
+            </label>
+            <label>
+              PAN No
+              <input id="panNumber" type="text" placeholder="PAN Number" />
+            </label>
+          </div>
+        </section>
+
+        <div id="salarySections"></div>
+
+        <section class="summary-card payslip-card">
+          <div class="payslip-head">
+            <div>
+              <h3>Total CTC</h3>
+              <p id="ctcValue">₹ 0.00</p>
+            </div>
+            <div class="payslip-badges">
+              <span class="status-pill">Printable</span>
+              <span class="status-pill">Export Ready</span>
+            </div>
+          </div>
+          <div class="summary-grid">
+            <div>
+              <span class="summary-label">Gross Monthly</span>
+              <strong id="summaryGrossMonthly">₹ 0.00</strong>
+            </div>
+            <div>
+              <span class="summary-label">Deduction Monthly</span>
+              <strong id="summaryDeductionMonthly">₹ 0.00</strong>
+            </div>
+            <div>
+              <span class="summary-label">Cash in Hand</span>
+              <strong id="summaryCashInHand">₹ 0.00</strong>
+            </div>
+            <div>
+              <span class="summary-label">Benefits</span>
+              <strong id="summaryBenefits">₹ 0.00</strong>
+            </div>
+          </div>
+          <p class="note">Note: 5 CL & 5 SL are applicable after 6 Months, PL will be applicable after 1 year as per Encorp's HR Policy.</p>
+          <p class="note">Applicable Taxes will be deducted from Gross Salary after Confirmation on quarterly basis.</p>
+        </section>
+
+        <section class="payslip-preview-card" id="payslipPreview">
+          <div class="payslip-header">
+            <div class="payslip-company-area">
+              <img id="previewLogo" class="small-logo" alt="company logo" />
+              <div class="payslip-company-text">
+                <strong id="previewCompanyName">Encorp Powertrans Pvt. Ltd.</strong>
+                <p id="previewCompanyTagline">Compensation Offer</p>
+                <p id="previewCompanyAddress" class="payslip-company-address">Payroll & HR Department</p>
+              </div>
+            </div>
+            <div class="payslip-meta-block">
+              <span class="payslip-slip-label">Salary Structure</span>
+              <span id="payslipSlipDate">Offer Date: --/--/----</span>
+              <span id="payslipPayPeriod">Valid Until: Current Month</span>
+            </div>
+          </div>
+          <div class="payslip-offer-banner">
+            <h2 class="offer-title">Salary Structure Offer</h2>
+            <p id="payslipPreviewSubtitle" class="offer-subtitle">Candidate compensation details and proposed structure</p>
+          </div>
+          <p id="offerGreeting" class="offer-greeting">Dear Candidate, this salary structure offer provides a detailed breakdown of your proposed compensation.</p>
+          <div class="payslip-details-grid">
+            <div>
+              <span>Employee Name</span>
+              <strong id="previewEmployeeName">-</strong>
+            </div>
+            <div>
+              <span>Department</span>
+              <strong id="previewDepartment">-</strong>
+            </div>
+            <div>
+              <span>Designation</span>
+              <strong id="previewDesignation">-</strong>
+            </div>
+            <div>
+              <span>Date of Joining</span>
+              <strong id="previewDoj">-</strong>
+            </div>
+            <div>
+              <span>PAN Number</span>
+              <strong id="previewPan">-</strong>
+            </div>
+            <div>
+              <span>Offer Amount</span>
+              <strong id="previewNetPay">₹ 0.00</strong>
+            </div>
+          </div>
+          <div class="payslip-terms">
+            <h3>Terms & Conditions</h3>
+            <ul>
+              <li>This salary structure offer is subject to final management and HR approval.</li>
+              <li>All payments are governed by the company payroll policy and applicable taxes.</li>
+              <li>Employee benefits and deductions are indicative and may be revised as per company rules.</li>
+            </ul>
+          </div>
+          <div class="payslip-breakdown">
+            <table>
+              <thead>
+                <tr>
+                  <th>Component</th>
+                  <th>Category</th>
+                  <th>Monthly</th>
+                  <th>Yearly</th>
+                </tr>
+              </thead>
+              <tbody id="payslipBreakdownBody"></tbody>
+              <tfoot>
+                <tr class="footer-row">
+                  <td colspan="2">Gross Earnings</td>
+                  <td id="previewGrossMonthly">₹ 0.00</td>
+                  <td id="previewGrossYearly">₹ 0.00</td>
+                </tr>
+                <tr class="footer-row">
+                  <td colspan="2">Total Deductions</td>
+                  <td id="previewDeductionMonthly">₹ 0.00</td>
+                  <td id="previewDeductionYearly">₹ 0.00</td>
+                </tr>
+                <tr class="footer-row net-row">
+                  <td colspan="2">Total Offer</td>
+                  <td id="previewNetMonthly">₹ 0.00</td>
+                  <td id="previewNetYearly">₹ 0.00</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <div class="payslip-footer">
+            <div class="payslip-signature">
+              <div>
+                <span>For and on behalf of</span>
+                <strong>Encorp Powertrans Pvt. Ltd.</strong>
+              </div>
+              <div>
+                <span>Authorized Signatory</span>
+                <strong>HR & Payroll</strong>
+              </div>
+            </div>
+            <p>This salary structure offer is indicative and subject to approval by the company and applicable regulatory requirements.</p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Kept in the application package so PDF export does not depend on internet access. -->
+    <script id="localPdfRendererLoader" src="vendor/html2pdf.bundle.min.js" onload="this.dataset.ready='true'" onerror="this.dataset.failed='true'"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

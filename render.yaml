@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: encorp-salary-portal
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: PYTHONNET_RUNTIME
+        value: mono
+      - key: ENCORP_SQL_CONNECTION_STRING
+        sync: false
+      - key: ENCORP_ADMIN_USERNAME
+        sync: false
+      - key: ENCORP_ADMIN_PASSWORD
+        sync: false

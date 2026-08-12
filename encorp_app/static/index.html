@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Encorp | Login</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="login-overrides.css" />
+  </head>
+  <body class="auth-page">
+    <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode">🌙</button>
+    <div class="auth-orb auth-orb-one" aria-hidden="true"></div>
+    <div class="auth-orb auth-orb-two" aria-hidden="true"></div>
+    <div class="auth-grid" aria-hidden="true"></div>
+    <div class="page-shell login-bg auth-page">
+      <div class="auth-shell">
+        <section class="auth-hero" aria-labelledby="loginWelcomeTitle">
+          <div class="hero-content">
+            <div class="hero-badge">HR &amp; Payroll Portal</div>
+            <h2 id="loginWelcomeTitle">Manage salary structures with confidence.</h2>
+            <p>Streamline employee pay, configure fields, and access salary records in one clear workspace.</p>
+            <div class="hero-stat-row" aria-label="Portal highlights">
+              <div><strong>Secure</strong><span>Access</span></div>
+              <div><strong>Flexible</strong><span>Fields</span></div>
+              <div><strong>Export</strong><span>Ready</span></div>
+            </div>
+            <div class="hero-features" aria-label="Portal features">
+              <div class="feature-item"><span class="feature-icon" aria-hidden="true">&#128274;</span><div class="feature-text"><h4>Secure access</h4><p>Your payroll workspace is protected with sign-in access.</p></div></div>
+              <div class="feature-item"><span class="feature-icon" aria-hidden="true">&#9881;</span><div class="feature-text"><h4>Flexible salary fields</h4><p>Configure salary components to suit your organisation.</p></div></div>
+              <div class="feature-item"><span class="feature-icon" aria-hidden="true">&#128202;</span><div class="feature-text"><h4>Ready for reporting</h4><p>Search, manage, and export payroll records with ease.</p></div></div>
+            </div>
+          </div>
+        </section>
+
+        <div class="login-card-container">
+        <section class="login-card" aria-labelledby="companyName">
+          <div class="brand-block">
+            <span class="signin-overline">Welcome to</span>
+            <img id="headerLogo" class="small-logo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='24' fill='%230f5d8f'/%3E%3Cpath d='M35 82V48h12v34H35Zm18 0V38h12v44H53Zm18 0V28h12v54H71Z' fill='white'/%3E%3C/svg%3E" alt="company logo" />
+            <h1 id="companyName">Encorp Powertrans Pvt. Ltd.</h1>
+            <p id="companyTagline">Employee Salary Portal</p>
+          </div>
+          <div class="login-divider" aria-hidden="true"></div>
+          <form id="loginForm" novalidate>
+              <div class="form-group">
+                <label for="username"><span class="label-icon" aria-hidden="true">&#128100;</span> Username</label>
+                <input id="username" class="form-input" name="username" type="text" placeholder="Enter your username" required autocomplete="username" autofocus />
+              </div>
+
+              <div class="form-group">
+                <label for="password"><span class="label-icon" aria-hidden="true">&#128273;</span> Password</label>
+                <input id="password" class="form-input" name="password" type="password" placeholder="Enter your password" required autocomplete="current-password" />
+              </div>
+
+              <div class="form-actions">
+                <label class="remember"><input type="checkbox" id="remember" /> Remember me</label>
+                <span class="forgot">Contact your administrator</span>
+              </div>
+
+              <button type="submit" class="login-btn"><span>Sign in</span><span class="btn-arrow" aria-hidden="true">&#8594;</span></button>
+              <p id="loginMessage" class="message" role="alert" aria-live="polite"></p>
+          </form>
+          <footer class="login-footer"><p><span aria-hidden="true">&#128274;</span> Your information is protected with secure access.</p></footer>
+        </section>
+        </div>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

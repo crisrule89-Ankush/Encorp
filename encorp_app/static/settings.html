@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Encorp | Field Settings</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode">🌙</button>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+          <img id="headerLogo" class="small-logo" alt="company logo" />
+          <div class="brand-text">
+            <strong id="pageBrand">Encorp</strong>
+            <p>Payroll Hub</p>
+          </div>
+        </div>
+        <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle navigation">☰</button>
+        <nav class="sidebar-nav">
+          <a class="nav-link" href="dashboard.html">Dashboard</a>
+          <a class="nav-link" href="salary.html">Salary Structure</a>
+          <a class="nav-link active" href="settings.html">Field Settings</a>
+          <a class="nav-link" href="search.html">Search</a>
+          <a class="nav-link" href="index.html">Logout</a>
+        </nav>
+      </aside>
+
+      <main class="settings-page">
+        <header class="page-header">
+          <div class="header-title">
+            <div>
+              <h1>Field Settings</h1>
+              <p>Manage salary structure fields, branding, and logo.</p>
+            </div>
+          </div>
+          <div class="header-actions">
+            <div class="status-pill">Configurable</div>
+          </div>
+        </header>
+
+        <section class="settings-card">
+          <h2>Brand Settings</h2>
+          <form id="settingsForm" class="settings-grid">
+            <label>
+              Company Name
+              <input id="companyNameInput" type="text" />
+            </label>
+            <label>
+              Tagline
+              <input id="companyTaglineInput" type="text" />
+            </label>
+            <label>
+              Primary Color
+              <input id="primaryColorInput" type="color" value="#0f5d8f" />
+            </label>
+            <label>
+              Accent Color
+              <input id="accentColorInput" type="color" value="#f4b400" />
+            </label>
+            <label>
+              Text Color
+              <input id="textColorInput" type="color" value="#162330" />
+            </label>
+            <label>
+              Font Family
+              <select id="fontFamilyInput">
+                <option value="Segoe UI">Segoe UI</option>
+                <option value="Trebuchet MS">Trebuchet MS</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Arial">Arial</option>
+                <option value="Verdana">Verdana</option>
+              </select>
+            </label>
+            <label>
+              Login Title
+              <input id="loginTitleInput" type="text" />
+            </label>
+            <label>
+              Logo Image
+              <input id="logoInput" type="file" accept="image/*" />
+            </label>
+            <div>
+              <button type="submit">Save Branding</button>
+            </div>
+          </form>
+          <p id="settingsMessage" class="message"></p>
+        </section>
+
+        <section class="settings-card">
+          <h2>Salary Structure Fields</h2>
+          <form id="fieldForm" class="settings-grid">
+            <input id="fieldId" type="hidden" />
+            <label>
+              Field Name
+              <input id="fieldName" type="text" placeholder="e.g. Transport Allowance" />
+            </label>
+            <label>
+              Type
+              <select id="fieldType">
+                <option value="earning">Earning</option>
+                <option value="deduction">Deduction</option>
+                <option value="benefit">Benefit</option>
+              </select>
+            </label>
+            <div>
+              <button type="submit">Save Field</button>
+            </div>
+          </form>
+          <div id="fieldList" class="list-group"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
