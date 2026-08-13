@@ -110,7 +110,7 @@ class EncorpRequestHandler(SimpleHTTPRequestHandler):
         elif route == "/api/health":
             self.handle_health()
         elif route == "/api/db_check":
-            self.require_auth(self.handle_db_check)
+            self.require_auth(self.handle_db_check_v2)
         elif route.startswith("/api/records"):
             self.require_auth(self.handle_records_api)
         else:
@@ -223,6 +223,40 @@ class EncorpRequestHandler(SimpleHTTPRequestHandler):
                 payload["database"] = "unavailable"
                 status = HTTPStatus.SERVICE_UNAVAILABLE
         self.send_json(payload, status)
+
+    def handle_db_check_v2(self) -> None:
+        """Diagnostic endpoint that attempts a DB connection and returns a sanitized result.
+
+        This endpoint is protected by authentication to avoid exposing internal details.
+        """
+        try:
+            conn = get_connection()
+            try:
+                cursor = conn.cursor()
+                try:
+                    cursor.execute("SELECT 1")
+                finally:
+                    try:
+                        cursor.close()
+                    except Exception:
+                        pass
+            finally:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+            self.send_json({"ok": True, "database": "connected"})
+        except Exception as exc:
+            import re as _re
+            msg = str(exc)
+            # Redact common connection-string keys and their values to avoid leaking secrets
+            msg = _re.sub(r'(?i)password=[^;]+;?', 'Password=[REDACTED];', msg)
+            msg = _re.sub(r'(?i)data source=[^;]+;?', 'Data Source=[REDACTED];', msg)
+            msg = _re.sub(r'(?i)server=[^;]+;?', 'Server=[REDACTED];', msg)
+            msg = _re.sub(r'(?i)user id=[^;]+;?', 'User ID=[REDACTED];', msg)
+            msg = _re.sub(r'(?i)initial catalog=[^;]+;?', 'Initial Catalog=[REDACTED];', msg)
+            print(f"DB check error: {type(exc).__name__}: {msg}", file=sys.stderr, flush=True)
+            self.send_json({"ok": False, "error": msg}, HTTPStatus.SERVICE_UNAVAILABLE)
 
     def handle_db_check(self) -> None:
         """Diagnostic endpoint that attempts a DB connection and returns a sanitized result.
