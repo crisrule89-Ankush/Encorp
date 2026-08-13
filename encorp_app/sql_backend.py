@@ -150,8 +150,24 @@ class DotNetConnection:
 def get_connection() -> Any:
     settings = load_protected_settings()
     connection_string = os.getenv("ENCORP_SQL_CONNECTION_STRING") or settings.get("sql_connection_string")
+    # Allow assembling a connection string from individual environment variables when a single
+    # connection string is not provided. This is convenient for Render and other deployment
+    # platforms where secrets are stored separately.
+    if not connection_string:
+        host = os.getenv("ENCORP_SQL_HOST")
+        database = os.getenv("ENCORP_SQL_DATABASE")
+        user = os.getenv("ENCORP_SQL_USER")
+        password = os.getenv("ENCORP_SQL_PASSWORD")
+        if host and database and user and password:
+            # Normalize host (allow host[:port] or host,port formats)
+            connection_string = f"Server=tcp:{host};Initial Catalog={database};User Id={user};Password={password};"
     if not connection_string:
         raise RuntimeError("Encorp database settings have not been configured.")
+    # Ensure encryption settings are present for environments (such as Azure) that require TLS.
+    if "encrypt" not in connection_string.lower():
+        if not connection_string.endswith(";"):
+            connection_string += ";"
+        connection_string += "Encrypt=True;TrustServerCertificate=True;"
     return DotNetConnection(str(connection_string))
 
 
