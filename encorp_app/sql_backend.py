@@ -155,10 +155,10 @@ def get_connection() -> Any:
     # platforms where secrets are stored separately.
     if not connection_string:
         host = os.getenv("ENCORP_SQL_HOST")
-        database = os.getenv("ENCORP_SQL_DATABASE")
+        database = os.getenv("ENCORP_SQL_DATABASE") or "GSMMaster"
         user = os.getenv("ENCORP_SQL_USER")
         password = os.getenv("ENCORP_SQL_PASSWORD")
-        if host and database and user and password:
+        if host and user and password:
             # Normalize host (allow host[:port] or host,port formats)
             connection_string = f"Server=tcp:{host};Initial Catalog={database};User Id={user};Password={password};"
     if not connection_string:
