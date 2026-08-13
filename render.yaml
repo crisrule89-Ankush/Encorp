@@ -3,7 +3,7 @@ services:
     name: encorp-salary-portal
     runtime: docker
     dockerfilePath: ./Dockerfile
-    healthCheckPath: /api/health
+    healthCheckPath: /api/public_health
     envVars:
       - key: HOST
         value: 0.0.0.0

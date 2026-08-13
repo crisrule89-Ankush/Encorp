@@ -110,6 +110,8 @@ class EncorpRequestHandler(SimpleHTTPRequestHandler):
             self.send_json({"authenticated": self.is_authenticated()})
         elif route == "/api/health":
             self.handle_health()
+        elif route == "/api/public_health":
+            self.handle_public_health()
         elif route == "/api/db_check":
             self.require_auth(self.handle_db_check_v2)
         elif route == "/api/db_schema_check":
@@ -215,6 +217,7 @@ class EncorpRequestHandler(SimpleHTTPRequestHandler):
         self.send_json({"ok": True}, headers={"Set-Cookie": "encorp_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0"})
 
     def handle_health(self) -> None:
+        # Keep existing behavior: authenticated users get a DB connectivity check
         payload = {"ok": True, "database": "not checked"}
         status = HTTPStatus.OK
         if self.is_authenticated():
@@ -226,6 +229,35 @@ class EncorpRequestHandler(SimpleHTTPRequestHandler):
                 payload["database"] = "unavailable"
                 status = HTTPStatus.SERVICE_UNAVAILABLE
         self.send_json(payload, status)
+
+    def handle_public_health(self) -> None:
+        """Unauthenticated minimal health endpoint for platform checks.
+
+        Returns JSON {"service": "ok", "db": "connected"|"unavailable"}.
+        Always returns HTTP 200 to avoid platform restarts if the DB is temporarily down;
+        the DB status is provided in the response body for observability.
+        """
+        db_status = "unavailable"
+        try:
+            conn = get_connection()
+            try:
+                cursor = conn.cursor()
+                try:
+                    cursor.execute('SELECT 1')
+                finally:
+                    try:
+                        cursor.close()
+                    except Exception:
+                        pass
+            finally:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+            db_status = "connected"
+        except Exception:
+            db_status = "unavailable"
+        self.send_json({"service": "ok", "db": db_status}, HTTPStatus.OK)
 
     def handle_db_check_v2(self) -> None:
         """Diagnostic endpoint that attempts a DB connection and returns a sanitized result.
