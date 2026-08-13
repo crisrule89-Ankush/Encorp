@@ -103,6 +103,10 @@ class EncorpRequestHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self) -> None:  # noqa: N802
         route = self._route(self.path)
+        try:
+            print(f"DEBUG: incoming GET route={route!r}", file=sys.stderr, flush=True)
+        except Exception:
+            pass
         if route in {"", "/"}:
             self.path = "/index.html"
             super().do_GET()
