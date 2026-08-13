@@ -189,7 +189,7 @@ class EncorpRequestHandler(SimpleHTTPRequestHandler):
             render_password = os.getenv("ENCORP_ADMIN_PASSWORD", "encorp123")
             # Debug: print received username and whether a file-based user exists (no secrets logged)
             try:
-                print(f"Login attempt: username={username!r} stored_exists={stored is not None}", file=sys.stderr, flush=True)
+                print(f"Login attempt: username={username!r} stored_exists={stored is not None} render_username={render_username!r} render_password_len={len(render_password) if render_password is not None else 0}", file=sys.stderr, flush=True)
             except Exception:
                 pass
             valid_render_login = bool(
