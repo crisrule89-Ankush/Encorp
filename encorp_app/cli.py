@@ -14,6 +14,7 @@ import socketserver
 import sys
 import time
 import urllib.parse
+import threading
 from functools import partial
 from http import HTTPStatus
 from http.cookies import SimpleCookie
@@ -603,6 +604,16 @@ def main() -> None:
     handler = partial(EncorpRequestHandler, directory=str(static_dir))
 
     # Startup DB schema check — run once and write a sanitized result to the logs so Render shows DB status on deploy.
+    def _sanitized_msg(exc):
+        import re as _re
+        msg = str(exc)
+        msg = _re.sub(r'(?i)password=[^;]+;?', 'Password=[REDACTED];', msg)
+        msg = _re.sub(r'(?i)data source=[^;]+;?', 'Data Source=[REDACTED];', msg)
+        msg = _re.sub(r'(?i)server=[^;]+;?', 'Server=[REDACTED];', msg)
+        msg = _re.sub(r'(?i)user id=[^;]+;?', 'User ID=[REDACTED];', msg)
+        msg = _re.sub(r'(?i)initial catalog=[^;]+;?', 'Initial Catalog=[REDACTED];', msg)
+        return msg
+
     try:
         conn = get_connection()
         try:
@@ -624,15 +635,37 @@ def main() -> None:
         has_expected = bool(cols and expected.intersection(set(cols)))
         print(f"DB schema check: connected, table={TABLE}, columns={cols}, has_expected_columns={has_expected}", flush=True)
     except Exception as exc:
-        import re as _re
-        msg = str(exc)
-        # Redact sensitive pieces from the message before logging
-        msg = _re.sub(r'(?i)password=[^;]+;?', 'Password=[REDACTED];', msg)
-        msg = _re.sub(r'(?i)data source=[^;]+;?', 'Data Source=[REDACTED];', msg)
-        msg = _re.sub(r'(?i)server=[^;]+;?', 'Server=[REDACTED];', msg)
-        msg = _re.sub(r'(?i)user id=[^;]+;?', 'User ID=[REDACTED];', msg)
-        msg = _re.sub(r'(?i)initial catalog=[^;]+;?', 'Initial Catalog=[REDACTED];', msg)
-        print(f"DB schema check failed: {msg}", file=sys.stderr, flush=True)
+        print(f"DB schema check failed: {_sanitized_msg(exc)}", file=sys.stderr, flush=True)
+
+    # Start a background monitor thread to keep checking DB availability periodically and log results.
+    def _db_monitor_loop(interval_seconds: int = 60):
+        while True:
+            try:
+                conn = get_connection()
+                try:
+                    cursor = conn.cursor()
+                    try:
+                        cursor.execute('SELECT 1')
+                    finally:
+                        try:
+                            cursor.close()
+                        except Exception:
+                            pass
+                finally:
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
+                print(f"DB monitor: connected at {time.strftime('%Y-%m-%d %H:%M:%S')}", flush=True)
+            except Exception as exc:
+                print(f"DB monitor: failed: {_sanitized_msg(exc)}", file=sys.stderr, flush=True)
+            try:
+                time.sleep(interval_seconds)
+            except Exception:
+                break
+
+    monitor = threading.Thread(target=_db_monitor_loop, args=(60,), daemon=True)
+    monitor.start()
 
     with EncorpServer((args.host, args.port), handler) as httpd:
         print(f"Serving Encorp at http://{args.host}:{args.port}/index.html", flush=True)
