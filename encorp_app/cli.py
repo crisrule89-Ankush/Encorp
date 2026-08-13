@@ -601,6 +601,39 @@ def main() -> None:
     args = parser.parse_args()
     static_dir = Path(args.directory).resolve() if args.directory else Path(__file__).resolve().parent / "static"
     handler = partial(EncorpRequestHandler, directory=str(static_dir))
+
+    # Startup DB schema check — run once and write a sanitized result to the logs so Render shows DB status on deploy.
+    try:
+        conn = get_connection()
+        try:
+            cursor = conn.cursor()
+            try:
+                cursor.execute(f"SELECT TOP 1 * FROM {TABLE}")
+                cols = [c[0] for c in (cursor.description or [])]
+            finally:
+                try:
+                    cursor.close()
+                except Exception:
+                    pass
+        finally:
+            try:
+                conn.close()
+            except Exception:
+                pass
+        expected = {"PAN", "EmployeeName", "ComponentValues"}
+        has_expected = bool(cols and expected.intersection(set(cols)))
+        print(f"DB schema check: connected, table={TABLE}, columns={cols}, has_expected_columns={has_expected}", flush=True)
+    except Exception as exc:
+        import re as _re
+        msg = str(exc)
+        # Redact sensitive pieces from the message before logging
+        msg = _re.sub(r'(?i)password=[^;]+;?', 'Password=[REDACTED];', msg)
+        msg = _re.sub(r'(?i)data source=[^;]+;?', 'Data Source=[REDACTED];', msg)
+        msg = _re.sub(r'(?i)server=[^;]+;?', 'Server=[REDACTED];', msg)
+        msg = _re.sub(r'(?i)user id=[^;]+;?', 'User ID=[REDACTED];', msg)
+        msg = _re.sub(r'(?i)initial catalog=[^;]+;?', 'Initial Catalog=[REDACTED];', msg)
+        print(f"DB schema check failed: {msg}", file=sys.stderr, flush=True)
+
     with EncorpServer((args.host, args.port), handler) as httpd:
         print(f"Serving Encorp at http://{args.host}:{args.port}/index.html", flush=True)
         httpd.serve_forever()
