@@ -20,6 +20,7 @@ from http.cookies import SimpleCookie
 from http.server import SimpleHTTPRequestHandler
 from pathlib import Path
 from xml.sax.saxutils import escape
+import re
 
 from .sql_backend import COMPONENT_COLUMNS, delete_record, find_by_pan, get_connection, list_records, load_protected_settings, save_record
 
@@ -108,6 +109,8 @@ class EncorpRequestHandler(SimpleHTTPRequestHandler):
             self.send_json({"authenticated": self.is_authenticated()})
         elif route == "/api/health":
             self.handle_health()
+        elif route == "/api/db_check":
+            self.require_auth(self.handle_db_check)
         elif route.startswith("/api/records"):
             self.require_auth(self.handle_records_api)
         else:
@@ -220,6 +223,41 @@ class EncorpRequestHandler(SimpleHTTPRequestHandler):
                 payload["database"] = "unavailable"
                 status = HTTPStatus.SERVICE_UNAVAILABLE
         self.send_json(payload, status)
+
+    def handle_db_check(self) -> None:
+        """Diagnostic endpoint that attempts a DB connection and returns a sanitized result.
+
+        This endpoint is protected by authentication to avoid exposing internal details.
+        """
+        try:
+            conn = get_connection()
+            try:
+                # Try a lightweight check: execute a simple statement if the provider supports it.
+                cursor = conn.cursor()
+                try:
+                    cursor.execute("SELECT 1")
+                finally:
+                    try:
+                        cursor.close()
+                    except Exception:
+                        pass
+            finally:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+            self.send_json({"ok": True, "database": "connected"})
+        except Exception as exc:
+            # Sanitize any sensitive fields that might appear in exception messages.
+            msg = str(exc)
+            # Redact common connection-string keys and their values.
+            msg = re.sub(r'(?i)password=[^;]+;?', 'Password=[REDACTED];', msg)
+            msg = re.sub(r'(?i)data source=[^;]+;?', 'Data Source=[REDACTED];', msg)
+            msg = re.sub(r'(?i)server=[^;]+;?', 'Server=[REDACTED];', msg)
+            msg = re.sub(r'(?i)user id=[^;]+;?', 'User ID=[REDACTED];', msg)
+            msg = re.sub(r'(?i)initial catalog=[^;]+;?', 'Initial Catalog=[REDACTED];', msg)
+            print(f"DB check error: {type(exc).__name__}: {msg}", file=sys.stderr, flush=True)
+            self.send_json({"ok": False, "error": msg}, HTTPStatus.SERVICE_UNAVAILABLE)
 
     def handle_records_api(self) -> None:
         parsed = urllib.parse.urlparse(self._route(self.path) + ("?" + urllib.parse.urlparse(self.path).query if urllib.parse.urlparse(self.path).query else ""))
