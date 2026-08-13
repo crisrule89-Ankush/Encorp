@@ -11,6 +11,14 @@ services:
         value: mono
       - key: ENCORP_SQL_CONNECTION_STRING
         sync: false
+      - key: ENCORP_SQL_HOST
+        sync: false
+      - key: ENCORP_SQL_DATABASE
+        sync: false
+      - key: ENCORP_SQL_USER
+        sync: false
+      - key: ENCORP_SQL_PASSWORD
+        sync: false
       - key: ENCORP_ADMIN_USERNAME
         value: Encorp
       - key: ENCORP_ADMIN_PASSWORD

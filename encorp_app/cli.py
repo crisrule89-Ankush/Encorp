@@ -22,7 +22,7 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 import re
 
-from .sql_backend import COMPONENT_COLUMNS, delete_record, find_by_pan, get_connection, list_records, load_protected_settings, save_record
+from .sql_backend import COMPONENT_COLUMNS, TABLE, delete_record, find_by_pan, get_connection, list_records, load_protected_settings, save_record
 
 
 SESSIONS: dict[str, float] = {}
@@ -111,6 +111,8 @@ class EncorpRequestHandler(SimpleHTTPRequestHandler):
             self.handle_health()
         elif route == "/api/db_check":
             self.require_auth(self.handle_db_check_v2)
+        elif route == "/api/db_schema_check":
+            self.require_auth(self.handle_schema_check)
         elif route.startswith("/api/records"):
             self.require_auth(self.handle_records_api)
         else:
@@ -291,6 +293,39 @@ class EncorpRequestHandler(SimpleHTTPRequestHandler):
             msg = re.sub(r'(?i)user id=[^;]+;?', 'User ID=[REDACTED];', msg)
             msg = re.sub(r'(?i)initial catalog=[^;]+;?', 'Initial Catalog=[REDACTED];', msg)
             print(f"DB check error: {type(exc).__name__}: {msg}", file=sys.stderr, flush=True)
+            self.send_json({"ok": False, "error": msg}, HTTPStatus.SERVICE_UNAVAILABLE)
+
+    def handle_schema_check(self) -> None:
+        """Check that the Salary_Structure table exists and return its top-level columns."""
+        try:
+            conn = get_connection()
+            try:
+                cursor = conn.cursor()
+                try:
+                    cursor.execute(f"SELECT TOP 1 * FROM {TABLE}")
+                    columns = [col[0] for col in (cursor.description or [])]
+                finally:
+                    try:
+                        cursor.close()
+                    except Exception:
+                        pass
+            finally:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+            expected = {"PAN", "EmployeeName", "ComponentValues"}
+            has_expected = bool(columns and expected.intersection(set(columns)))
+            self.send_json({"ok": True, "table": "found", "columns": columns, "has_expected_columns": has_expected})
+        except Exception as exc:
+            import re as _re
+            msg = str(exc)
+            msg = _re.sub(r'(?i)password=[^;]+;?', 'Password=[REDACTED];', msg)
+            msg = _re.sub(r'(?i)data source=[^;]+;?', 'Data Source=[REDACTED];', msg)
+            msg = _re.sub(r'(?i)server=[^;]+;?', 'Server=[REDACTED];', msg)
+            msg = _re.sub(r'(?i)user id=[^;]+;?', 'User ID=[REDACTED];', msg)
+            msg = _re.sub(r'(?i)initial catalog=[^;]+;?', 'Initial Catalog=[REDACTED];', msg)
+            print(f"Schema check error: {type(exc).__name__}: {msg}", file=sys.stderr, flush=True)
             self.send_json({"ok": False, "error": msg}, HTTPStatus.SERVICE_UNAVAILABLE)
 
     def handle_records_api(self) -> None:
