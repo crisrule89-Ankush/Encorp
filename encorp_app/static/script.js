@@ -866,7 +866,12 @@ function renderPayslipPreview() {
 
   const rows = fields.map((field) => {
     const input = document.querySelector(`[data-field-id="${field.id}"]`);
-    const monthly = Number(input?.value || 0);
+    const consideration = field.type === 'deduction'
+      ? document.querySelector(`[data-consideration-id="${field.id}"]`)
+      : null;
+    const monthly = field.type === 'deduction' && consideration?.value === 'no'
+      ? 0
+      : Number(input?.value || 0);
     const yearly = monthly * 12;
     const entryType = field.type === 'earning' ? 'Earning' : field.type === 'deduction' ? 'Deduction' : 'Benefit';
 
@@ -884,7 +889,7 @@ function renderPayslipPreview() {
     `;
   }).join('');
 
-  const netMonthly = totalEarnings - totalDeductions + totalBenefits;
+  const netMonthly = totalEarnings - totalDeductions;
   const netYearly = netMonthly * 12;
 
   if (breakdownBody) breakdownBody.innerHTML = rows;
@@ -913,14 +918,28 @@ function renderSalarySections() {
   ];
 
   container.innerHTML = sections.map((section) => {
-    const rows = section.fields.map((field) => `
-      <tr>
-        <td>${field.name}</td>
-        <td><input class="amount-input" data-field-id="${field.id}" data-group="${section.type}" type="number" value="${field.monthly || 0}" /></td>
-        <td><input class="yearly-value" data-yearly="${field.id}" type="text" value="0" readonly /></td>
-        <td><input class="percent-value" data-percent="${field.id}" type="text" value="0%" readonly /></td>
-      </tr>
-    `).join('');
+    const isDeductionSection = section.type === 'deduction';
+    const considerationHeader = isDeductionSection ? '<th>Consider</th>' : '';
+    const considerationTotalCell = isDeductionSection ? '<td></td>' : '';
+    const rows = section.fields.map((field) => {
+      const considerationCell = isDeductionSection ? `
+        <td>
+          <select class="consideration-select" data-consideration-id="${escapeHtml(field.id)}" aria-label="Consider ${escapeHtml(field.name)} deduction">
+            <option value="yes" selected>Yes</option>
+            <option value="no">No</option>
+          </select>
+        </td>
+      ` : '';
+      return `
+        <tr>
+          <td>${escapeHtml(field.name)}</td>
+          <td><input class="amount-input" data-field-id="${escapeHtml(field.id)}" data-group="${section.type}" type="number" min="0" step="0.01" value="${field.monthly || 0}" /></td>
+          <td><input class="yearly-value" data-yearly="${escapeHtml(field.id)}" type="text" value="0" readonly /></td>
+          <td><input class="percent-value" data-percent="${escapeHtml(field.id)}" type="text" value="0%" readonly /></td>
+          ${considerationCell}
+        </tr>
+      `;
+    }).join('');
 
     const totalLabel = section.type === 'earning' ? 'Gross Salary Payable' : section.type === 'deduction' ? 'Total' : 'Total';
     const totalId = section.type === 'earning' ? 'grossMonthly' : section.type === 'deduction' ? 'deductionMonthly' : 'benefitMonthly';
@@ -931,6 +950,7 @@ function renderSalarySections() {
         <td><input id="cashInHand" type="text" value="0" readonly /></td>
         <td><input id="cashInHandYearly" type="text" value="0" readonly /></td>
         <td><input type="text" value="-" readonly /></td>
+        ${considerationTotalCell}
       </tr>
     ` : '';
 
@@ -945,6 +965,7 @@ function renderSalarySections() {
                 <th>Monthly</th>
                 <th>Yearly</th>
                 <th>Percentage</th>
+                ${considerationHeader}
               </tr>
             </thead>
             <tbody>
@@ -954,6 +975,7 @@ function renderSalarySections() {
                 <td><input id="${totalId}" type="text" value="0" readonly /></td>
                 <td><input id="${totalYearlyId}" type="text" value="0" readonly /></td>
                 <td><input type="text" value="100%" readonly /></td>
+                ${considerationTotalCell}
               </tr>
               ${extraRow}
             </tbody>
@@ -982,9 +1004,203 @@ async function initSalaryPage() {
   const departmentInput = document.getElementById('department');
   const designationInput = document.getElementById('designation');
   const dojInput = document.getElementById('doj');
+  const calculatorBasis = document.getElementById('calculatorBasis');
+  const calculatorTarget = document.getElementById('calculatorTarget');
+  const calculatorReference = document.getElementById('calculatorReference');
+  const calculatorMessage = document.getElementById('calculatorMessage');
+  const autoCalculateBtn = document.getElementById('autoCalculateBtn');
+  let lastCalculation = null;
+  const screenshotReference = {
+    basic: 75000,
+    hra: 30000,
+    medical: 0,
+    conveyance: 0,
+    education: 0,
+    books: 0,
+    attire: 0,
+    fuel: 0,
+    lta: 0,
+    bonus: 6247.5,
+    otherAllow: 8661,
+    pf: 3000,
+    esic: 0,
+    pt: 200,
+    epf: 3250,
+    mediclaim: 781,
+    gratuity: 3606,
+    benefitEsic: 0
+  };
+  const screenshotReferenceByName = {
+    basicsalary: 'basic',
+    houserentallowance: 'hra',
+    hra: 'hra',
+    medicalallowances: 'medical',
+    conveyanceallowance: 'conveyance',
+    education: 'education',
+    booksperiodicals: 'books',
+    attireallowance: 'attire',
+    fuelcarreimbursement: 'fuel',
+    lta: 'lta',
+    bonus833: 'bonus',
+    otherallowance: 'otherAllow',
+    pf: 'pf',
+    professionalfund: 'pf',
+    esic: 'esic',
+    esi: 'esic',
+    professionaltax: 'pt',
+    employercontributionepf: 'epf',
+    mediclaim: 'mediclaim',
+    gratuity: 'gratuity'
+  };
+
+  function setConsiderationRow(select) {
+    const excluded = select.value === 'no';
+    const row = select.closest('tr');
+    const amountInput = document.querySelector(`[data-field-id="${select.dataset.considerationId}"]`);
+    row?.classList.toggle('deduction-excluded', excluded);
+    if (amountInput) amountInput.disabled = excluded;
+  }
+
+  function readCurrentReference() {
+    return getFields().map((field) => {
+      const input = document.querySelector(`[data-field-id="${field.id}"]`);
+      const consideration = field.type === 'deduction'
+        ? document.querySelector(`[data-consideration-id="${field.id}"]`)
+        : null;
+      return {
+        id: field.id,
+        type: field.type,
+        monthly: Number(input?.dataset.notConsideredValue || input?.value || 0),
+        considered: !consideration || consideration.value !== 'no'
+      };
+    });
+  }
+
+  function getCalculatorReference() {
+    if (calculatorReference.value === 'current') return readCurrentReference();
+    return getFields().map((field) => {
+      const normalizedName = String(field.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const sampleId = Object.prototype.hasOwnProperty.call(screenshotReference, field.id)
+        ? field.id
+        : field.type === 'benefit' && normalizedName === 'esic'
+          ? 'benefitEsic'
+          : screenshotReferenceByName[normalizedName];
+      return {
+        id: field.id,
+        type: field.type,
+        monthly: Number((sampleId && screenshotReference[sampleId]) || 0),
+        considered: field.type !== 'deduction' || document.querySelector(`[data-consideration-id="${field.id}"]`)?.value !== 'no'
+      };
+    });
+  }
+
+  function applySalaryTarget(reference = null, showErrors = false) {
+    const target = Number(calculatorTarget.value);
+    if (!Number.isFinite(target) || target <= 0) {
+      if (showErrors && calculatorMessage) calculatorMessage.textContent = 'Enter a monthly target greater than zero.';
+      return false;
+    }
+
+    const source = reference || (
+      lastCalculation && lastCalculation.source === calculatorReference.value
+        ? lastCalculation.reference
+        : getCalculatorReference()
+    );
+    const fields = getFields();
+    const sourceById = new Map(source.map((item) => [String(item.id), item]));
+    const sourceGross = fields
+      .filter((field) => field.type === 'earning')
+      .reduce((sum, field) => sum + Number(sourceById.get(String(field.id))?.monthly || 0), 0);
+    const sourceDeductions = fields
+      .filter((field) => field.type === 'deduction')
+      .reduce((sum, field) => {
+        const select = document.querySelector(`[data-consideration-id="${field.id}"]`);
+        return select?.value === 'no' ? sum : sum + Number(sourceById.get(String(field.id))?.monthly || 0);
+      }, 0);
+    const basisTotal = calculatorBasis.value === 'cashInHand'
+      ? sourceGross - sourceDeductions
+      : sourceGross;
+
+    if (basisTotal <= 0) {
+      if (showErrors && calculatorMessage) {
+        calculatorMessage.textContent = calculatorReference.value === 'current'
+          ? 'Enter a reference salary breakup in the table first, or choose the attached sample.'
+          : 'The attached sample does not match the configured salary fields. Enter a reference salary breakup and choose Current salary table.';
+      }
+      return false;
+    }
+
+    const multiplier = target / basisTotal;
+    const scaled = new Map();
+    fields.forEach((field) => {
+      const amount = Number(sourceById.get(String(field.id))?.monthly || 0) * multiplier;
+      scaled.set(String(field.id), Math.round((amount + Number.EPSILON) * 100) / 100);
+    });
+
+    const earningFields = fields.filter((field) => field.type === 'earning');
+    const lastEarning = earningFields.find((field) => field.id === 'otherAllow') || earningFields[earningFields.length - 1];
+    if (lastEarning) {
+      const earningsAfterRounding = earningFields.reduce((sum, field) => sum + (scaled.get(String(field.id)) || 0), 0);
+      const includedDeductionsAfterRounding = fields
+        .filter((field) => field.type === 'deduction')
+        .reduce((sum, field) => {
+          const select = document.querySelector(`[data-consideration-id="${field.id}"]`);
+          return select?.value === 'no' ? sum : sum + (scaled.get(String(field.id)) || 0);
+        }, 0);
+      const currentTotal = calculatorBasis.value === 'cashInHand'
+        ? earningsAfterRounding - includedDeductionsAfterRounding
+        : earningsAfterRounding;
+      const correction = Math.round((target - currentTotal + Number.EPSILON) * 100) / 100;
+      scaled.set(String(lastEarning.id), Math.max(0, Math.round(((scaled.get(String(lastEarning.id)) || 0) + correction + Number.EPSILON) * 100) / 100));
+    }
+
+    fields.forEach((field) => {
+      const input = document.querySelector(`[data-field-id="${field.id}"]`);
+      if (!input) return;
+      const amount = scaled.get(String(field.id)) || 0;
+      const select = field.type === 'deduction'
+        ? document.querySelector(`[data-consideration-id="${field.id}"]`)
+        : null;
+      if (select?.value === 'no') {
+        input.dataset.notConsideredValue = amount.toFixed(2);
+        input.value = '0';
+      } else {
+        delete input.dataset.notConsideredValue;
+        input.value = amount.toFixed(2);
+      }
+      if (select) setConsiderationRow(select);
+    });
+
+    lastCalculation = { reference: source, source: calculatorReference.value };
+    updateSummary();
+    if (calculatorMessage) {
+      const gross = earningFields.reduce((sum, field) => sum + Number(document.querySelector(`[data-field-id="${field.id}"]`)?.value || 0), 0);
+      const deductions = fields
+        .filter((field) => field.type === 'deduction')
+        .reduce((sum, field) => sum + Number(document.querySelector(`[data-field-id="${field.id}"]`)?.value || 0), 0);
+      calculatorMessage.textContent = `Updated proportionally. Gross ₹${gross.toFixed(2)} • Deductions ₹${deductions.toFixed(2)} • Cash in hand ₹${(gross - deductions).toFixed(2)}.`;
+    }
+    return true;
+  }
+
+  function handleConsiderationChange(event) {
+    const select = event.target;
+    const input = document.querySelector(`[data-field-id="${select.dataset.considerationId}"]`);
+    if (select.value === 'no' && input && !input.dataset.notConsideredValue) {
+      input.dataset.notConsideredValue = input.value || '0';
+      input.value = '0';
+    } else if (select.value === 'yes' && input && input.dataset.notConsideredValue) {
+      if (!lastCalculation) input.value = input.dataset.notConsideredValue;
+      delete input.dataset.notConsideredValue;
+    }
+    setConsiderationRow(select);
+    if (lastCalculation) applySalaryTarget(lastCalculation.reference);
+    else updateSummary();
+  }
 
   function loadRecordIntoForm(record) {
     const normalizedRecord = normalizeRecord(record);
+    lastCalculation = null;
     panInput.value = normalizedRecord.pan;
     employeeNameInput.value = normalizedRecord.employeeName || '';
     departmentInput.value = normalizedRecord.department || '';
@@ -995,19 +1211,37 @@ async function initSalaryPage() {
     fields.forEach((field) => {
       const input = document.querySelector(`[data-field-id="${field.id}"]`);
       const savedValue = normalizedRecord.values?.find((item) => item.id === field.id);
-      if (input) input.value = savedValue?.monthly || 0;
+      const consideration = field.type === 'deduction'
+        ? document.querySelector(`[data-consideration-id="${field.id}"]`)
+        : null;
+      if (consideration) {
+        consideration.value = savedValue?.considered === false ? 'no' : 'yes';
+        setConsiderationRow(consideration);
+      }
+      if (input) {
+        input.value = savedValue?.monthly || 0;
+        delete input.dataset.notConsideredValue;
+      }
     });
     updateSummary();
   }
 
   function collectValues() {
     const fields = getFields();
-    return fields.map((field) => ({
-      id: field.id,
-      name: field.name,
-      type: field.type,
-      monthly: Number(document.querySelector(`[data-field-id="${field.id}"]`)?.value || 0)
-    }));
+    return fields.map((field) => {
+      const consideration = field.type === 'deduction'
+        ? document.querySelector(`[data-consideration-id="${field.id}"]`)
+        : null;
+      const considered = !consideration || consideration.value !== 'no';
+      const amount = Number(document.querySelector(`[data-field-id="${field.id}"]`)?.value || 0);
+      return {
+        id: field.id,
+        name: field.name,
+        type: field.type,
+        monthly: field.type === 'deduction' && !considered ? 0 : amount,
+        ...(consideration ? { considered } : {})
+      };
+    });
   }
 
   function updateSummary() {
@@ -1018,7 +1252,10 @@ async function initSalaryPage() {
 
     const grossMonthly = earningInputs.reduce((sum, input) => sum + Number(input.value || 0), 0);
     const grossYearly = grossMonthly * 12;
-    const deductionMonthly = deductionInputs.reduce((sum, input) => sum + Number(input.value || 0), 0);
+    const deductionMonthly = deductionInputs.reduce((sum, input) => {
+      const consideration = document.querySelector(`[data-consideration-id="${input.dataset.fieldId}"]`);
+      return consideration?.value === 'no' ? sum : sum + Number(input.value || 0);
+    }, 0);
     const deductionYearly = deductionMonthly * 12;
     const cashInHand = grossMonthly - deductionMonthly;
     const cashInHandYearly = grossYearly - deductionYearly;
@@ -1074,9 +1311,24 @@ async function initSalaryPage() {
 
   document.addEventListener('input', (event) => {
     if (event.target.classList.contains('amount-input')) {
+      if (event.target.dataset.group === 'deduction') {
+        delete event.target.dataset.notConsideredValue;
+      }
+      lastCalculation = null;
       updateSummary();
     }
   });
+
+  document.querySelectorAll('.consideration-select').forEach((select) => {
+    select.addEventListener('change', handleConsiderationChange);
+  });
+  calculatorTarget.addEventListener('input', () => applySalaryTarget());
+  calculatorBasis.addEventListener('change', () => applySalaryTarget());
+  calculatorReference.addEventListener('change', () => {
+    lastCalculation = null;
+    applySalaryTarget();
+  });
+  autoCalculateBtn.addEventListener('click', () => applySalaryTarget(null, true));
 
   saveBtn.addEventListener('click', async () => {
     const pan = panInput.value.trim();
@@ -1132,6 +1384,16 @@ async function initSalaryPage() {
       await deleteRecordFromServer(pan);
       employeeNameInput.value = ''; departmentInput.value = ''; designationInput.value = ''; dojInput.value = ''; panInput.value = '';
       document.querySelectorAll('.amount-input').forEach((input) => { input.value = '0'; });
+      document.querySelectorAll('.consideration-select').forEach((select) => {
+        select.value = 'yes';
+        const input = document.querySelector(`[data-field-id="${select.dataset.considerationId}"]`);
+        if (input) {
+          delete input.dataset.notConsideredValue;
+          input.disabled = false;
+        }
+        select.closest('tr')?.classList.remove('deduction-excluded');
+      });
+      lastCalculation = null;
       updateSummary();
       recordStatus.textContent = `Deleted record for ${pan}.`;
     } catch (error) {

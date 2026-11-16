@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Encorp | Salary Structure</title>
-    <link rel="stylesheet" href="styles.css?v=encorp-ui-2" />
+    <link rel="stylesheet" href="styles.css?v=encorp-ui-3" />
   </head>
   <body>
     <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark mode">🌙</button>
@@ -21,6 +21,7 @@
         <nav class="sidebar-nav">
           <a class="nav-link" href="dashboard.html">Dashboard</a>
           <a class="nav-link active" href="salary.html">Salary Structure</a>
+          <a class="nav-link" href="salary.html#autoSalaryCalculator">Auto Calculator</a>
           <a class="nav-link" href="settings.html">Field Settings</a>
           <a class="nav-link" href="search.html">Search</a>
           <a class="nav-link" href="index.html">Logout</a>
@@ -36,6 +37,30 @@
             </div>
           </div>
         </header>
+
+        <section class="table-card salary-calculator-card" id="autoSalaryCalculator" aria-labelledby="autoSalaryCalculatorTitle">
+          <h2 id="autoSalaryCalculatorTitle">Auto Salary Calculator</h2>
+          <p class="calculator-help">Enter a monthly gross salary or cash-in-hand target. The attached sample breakup is scaled proportionally; deductions marked No are excluded.</p>
+          <div class="salary-calculator-fields">
+            <label for="calculatorBasis">Target salary type
+              <select id="calculatorBasis">
+                <option value="gross">Gross salary</option>
+                <option value="cashInHand">Cash in hand</option>
+              </select>
+            </label>
+            <label for="calculatorTarget">Monthly target (₹)
+              <input id="calculatorTarget" type="number" min="0.01" step="0.01" placeholder="Enter target monthly salary" />
+            </label>
+            <label for="calculatorReference">Reference breakup
+              <select id="calculatorReference">
+                <option value="sample">Attached sample</option>
+                <option value="current">Current salary table</option>
+              </select>
+            </label>
+            <button id="autoCalculateBtn" type="button">Apply to salary structure</button>
+          </div>
+          <p id="calculatorMessage" class="calculator-message" role="status" aria-live="polite"></p>
+        </section>
 
         <section class="toolbar-card">
           <div class="toolbar-group">
@@ -215,6 +240,6 @@
 
     <!-- Kept in the application package so PDF export does not depend on internet access. -->
     <script id="localPdfRendererLoader" src="vendor/html2pdf.bundle.min.js" onload="this.dataset.ready='true'" onerror="this.dataset.failed='true'"></script>
-    <script src="script.js?v=encorp-ui-2"></script>
+    <script src="script.js?v=encorp-ui-3"></script>
   </body>
 </html>
