@@ -1065,6 +1065,29 @@ th {
   }
 }
 
+/* Keep feedback messages compact and use the supplied Encorp brand mark. */
+.message {
+  min-height: 0;
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.sidebar-brand .small-logo {
+  width: 112px !important;
+  height: auto !important;
+  max-height: 38px;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.sidebar.collapsed .sidebar-brand .small-logo {
+  width: 48px !important;
+  max-height: 24px;
+}
+
 /* Premium login-page refresh */
 .auth-page { min-height: 100vh; background: #071d31; isolation: isolate; }
 .login-bg.auth-page { position: relative; z-index: 1; min-height: 100vh; padding: 42px 28px; background: radial-gradient(circle at 7% 10%, rgba(44,182,221,.2), transparent 29rem), radial-gradient(circle at 93% 90%, rgba(247,181,54,.15), transparent 24rem), linear-gradient(135deg, #06192b, #0b3858 52%, #061a2d); }

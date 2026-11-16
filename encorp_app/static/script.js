@@ -164,7 +164,7 @@ function applyBranding() {
   if (pageBrand) pageBrand.textContent = settings.companyName || 'Encorp Powertrans Pvt. Ltd.';
 
   const logoSize = Number(settings.logoSize || 72);
-  const logoSrc = settings.logoData || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"%3E%3Crect width="120" height="120" rx="24" fill="%230f5d8f"/%3E%3Cpath d="M35 82V48h12v34H35Zm18 0V38h12v44H53Zm18 0V28h12v54H71Z" fill="white"/%3E%3C/svg%3E';
+  const logoSrc = settings.logoData || 'encorp-logo.jpg';
   const applyLogoSize = (element) => {
     if (!element) return;
     element.src = logoSrc;
