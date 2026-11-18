@@ -177,11 +177,28 @@ function applyBranding() {
   if (headerLogo) applyLogoSize(headerLogo);
 }
 
+function getSafeReturnTarget(value) {
+  if (!value) return null;
+  try {
+    const target = new URL(value, window.location.href);
+    if (target.origin !== window.location.origin) return null;
+    const page = target.pathname.split('/').pop();
+    if (!page || page.toLowerCase() === 'index.html') return null;
+    return `${page}${target.search}${target.hash}`;
+  } catch (error) {
+    return null;
+  }
+}
+
 async function protectPage() {
   const response = await apiFetch('/api/session');
   const status = response.ok ? await response.json() : { authenticated: false };
   if (!status.authenticated) {
-    window.location.replace('index.html');
+    const returnTo = getSafeReturnTarget(`${window.location.pathname}${window.location.search}${window.location.hash}`);
+    const loginUrl = new URL('index.html', window.location.href);
+    loginUrl.searchParams.set('v', 'calculator-nav-4');
+    if (returnTo) loginUrl.searchParams.set('next', returnTo);
+    window.location.replace(`${loginUrl.pathname}${loginUrl.search}`);
     throw new Error('Authentication required');
   }
 }
@@ -265,8 +282,11 @@ function initLoginPage() {
       loginMessage.textContent = result.error || 'Unable to sign in. Please try again.';
       return;
     }
-    loginMessage.textContent = 'Sign-in successful. Opening your dashboard…';
-    window.location.assign('dashboard.html');
+    const destination = getSafeReturnTarget(new URLSearchParams(window.location.search).get('next')) || 'dashboard.html';
+    loginMessage.textContent = destination.includes('autoSalaryCalculator')
+      ? 'Sign-in successful. Opening the salary calculator…'
+      : 'Sign-in successful. Opening your dashboard…';
+    window.location.assign(destination);
   });
 }
 
@@ -296,13 +316,17 @@ async function downloadSalaryStructurePdf(payload) {
 }
 
 function initLogout() {
-  const logoutLinks = Array.from(document.querySelectorAll('a[href="index.html"]'));
+  const logoutLinks = Array.from(document.querySelectorAll('a[href="index.html"], a[href^="index.html?"]'));
   logoutLinks.forEach((logoutLink) => {
     logoutLink.addEventListener('click', async (event) => {
       if (document.getElementById('loginForm')) return;
       event.preventDefault();
+      const returnTo = getSafeReturnTarget(`${window.location.pathname}${window.location.search}${window.location.hash}`);
       await apiFetch('/api/logout', { method: 'POST' });
-      window.location.assign('index.html');
+      const loginUrl = new URL('index.html', window.location.href);
+      loginUrl.searchParams.set('v', 'calculator-nav-4');
+      if (returnTo) loginUrl.searchParams.set('next', returnTo);
+      window.location.assign(`${loginUrl.pathname}${loginUrl.search}`);
     });
   });
 }
